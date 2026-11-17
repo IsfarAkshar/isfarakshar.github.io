@@ -91,6 +91,7 @@ svg.flow{width:100%;height:auto;margin:6px 0}
 .links a:hover{border-color:var(--sig);color:var(--sig)}
 footer{position:relative;z-index:1;text-align:center;color:var(--mute);font-size:13px;padding:30px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+#ans{white-space:pre-line}.src,.out .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:12px}.src span,.out .chips span{color:var(--mute)}.src i{font-style:normal;border-radius:6px;padding:2px 8px;border:1px solid var(--line);background:linear-gradient(90deg,var(--glow) var(--w),transparent var(--w))}.out .chip{font-size:12px}
 </style>
 </head>
 <body>
@@ -102,19 +103,11 @@ footer{position:relative;z-index:1;text-align:center;color:var(--mute);font-size
 <div class="role" id="role"></div>
 <div class="router">
 <h3>Ask my routing agent about me</h3>
-<p class="sub">I build multi-agent systems at work, so this page runs a tiny one. Pick a question or type your own.</p>
+<p class="sub">Ask in your own words. It retrieves the closest notes from my CV, routes to the right agent and writes a fresh answer each time.</p>
 <div class="chips" id="chips"></div>
-<svg class="flow" viewBox="0 0 700 150" role="img" aria-label="Router sending a question to one of three agents">
-<path class="ln" id="l1" d="M170 75 C230 75 230 25 300 25"/><path class="ln" id="l2" d="M170 75 L300 75"/><path class="ln" id="l3" d="M170 75 C230 75 230 125 300 125"/>
-<path class="ln" id="l4" d="M470 25 C540 25 540 75 560 75"/><path class="ln" id="l5" d="M470 75 L560 75"/><path class="ln" id="l6" d="M470 125 C540 125 540 75 560 75"/>
-<g class="nd" id="n0"><rect x="30" y="50" width="140" height="50" rx="10"/><text x="100" y="81">Routing agent</text></g>
-<g class="nd" id="n1"><rect x="300" y="2" width="170" height="46" rx="10"/><text x="385" y="30">Experience agent</text></g>
-<g class="nd" id="n2"><rect x="300" y="52" width="170" height="46" rx="10"/><text x="385" y="80">Projects agent</text></g>
-<g class="nd" id="n3"><rect x="300" y="102" width="170" height="46" rx="10"/><text x="385" y="130">Profile agent</text></g>
-<g class="nd" id="n4"><rect x="560" y="50" width="120" height="50" rx="10"/><text x="620" y="81">Answer</text></g>
-</svg>
-<form class="ask" id="f"><input id="q" placeholder="e.g. What did he build at IDLC?" aria-label="Your question"><button class="btn">Ask</button></form>
-<div class="out" id="out"><small>Waiting for a question</small>Try a chip above.</div>
+<svg class="flow" id="flow" viewBox="0 0 700 240" role="img" aria-label="Router sending a question to one of five agents"></svg>
+<form class="ask" id="f"><input id="q" placeholder="Ask anything: grades, a project, why hire him..." aria-label="Your question"><button class="btn">Ask</button></form>
+<div class="out" id="out"><small>Waiting for a question</small>Try a chip above, or type your own.</div>
 </div>
 <div class="stats">
 <div class="stat"><b data-n="3.95" data-d="2">0</b><span>CGPA at BRAC University, summa cum laude</span></div>
@@ -171,7 +164,7 @@ footer{position:relative;z-index:1;text-align:center;color:var(--mute);font-size
 </div>
 <p>+880 1642 171997 · Dhaka, Bangladesh</p></section>
 </main>
-<footer>Designed by Isfar Ibn Mufty. Hint: ↑ ↑ ↓ ↓ ← → ← → B A</footer>
+<footer>Designed for Isfar Ibn Mufty. Hint: ↑ ↑ ↓ ↓ ← → ← → B A</footer>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // theme
@@ -190,17 +183,61 @@ for(let i=0;i<P.length;i++){for(let j=i+1;j<P.length;j++){const d=Math.hypot(P[i
 const dm=Math.hypot(P[i].x-m.x,P[i].y-m.y);if(dm<170){cx.globalAlpha=(1-dm/170)*.6;cx.beginPath();cx.moveTo(P[i].x,P[i].y);cx.lineTo(m.x,m.y);cx.stroke()}}
 requestAnimationFrame(draw)}draw();
 // router
-const KB={
-exp:{a:1,t:'Experience agent',k:/idlc|work|job|experience|robi|intern|career|tutor|teach|ocr|nid|agent/,r:'At IDLC Finance he builds a multi-agent platform (LLM router, RAG, text-to-SQL) plus a Bangladesh NID OCR system using vision-language models. Before that, he built customer-segmentation pipelines over 1M+ records at Robi.'},
-proj:{a:2,t:'Projects agent',k:/project|build|built|model|dashboard|rag|ppo|trading|portfolio|fraud|click|tableau|streamlit|ml|machine/,r:'Highlights: a transformer-based multi-agent PPO portfolio manager (Sharpe 1.43), trade mis-invoicing detection (93.71% accuracy), click-conversion prediction (95.91% ROC-AUC, FastAPI + Docker), and a telecom revenue RCA dashboard.'},
-me:{a:3,t:'Profile agent',k:/.*/,r:'Isfar is an AI engineer based in Dhaka with a 3.95 CGPA (summa cum laude) from BRAC University, now pursuing a Professional Master’s in AI and Data Engineering at the University of Dhaka. He also sings and tutors. Email: isfarakshar@gmail.com.'}};
-const Q=['What did he build at IDLC?','Which projects show his ML skills?','Who is Isfar?','How strong are his grades?'];
-$('#chips').innerHTML=Q.map(q=>`<button class="chip" type="button">${q}</button>`).join('');
-function ask(q){const key=/grade|cgpa|gpa|educat|study|degree|univers|who|about|contact|email/.test(q.toLowerCase())?'me':Object.keys(KB).find(k=>KB[k].k.test(q.toLowerCase()));const e=KB[key];
-$$('.nd,.ln').forEach(x=>x.classList.remove('act'));$('#n0').classList.add('act');$('#l'+e.a).classList.add('act');
-setTimeout(()=>{$('#n'+e.a).classList.add('act');$('#l'+(e.a+3)).classList.add('act');setTimeout(()=>{$('#n4').classList.add('act');$('#out').innerHTML=`<small>Routed to ${e.t}</small>${e.r}`},450)},450)}
-$('#chips').onclick=e=>{if(e.target.matches('.chip')){$('#q').value=e.target.textContent;ask(e.target.textContent)}};
-$('#f').onsubmit=e=>{e.preventDefault();if($('#q').value.trim())ask($('#q').value)};
+const AG=['Work','Projects','Skills','Education','Personal'];
+const INTRO=[["Here's what he has done at work.","Pulling this from his work history:","Easy one for the Work agent."],["Let me pull up the relevant project.","From his project shelf:","The Projects agent has this one."],["On the skills side:","Checking his toolbox:","The Skills agent says:"],["From his academic record:","The Education agent reports:","Here's the school side:"],["A more personal one.","The Profile agent has this:","Happy to answer that."]];
+const K=[
+{id:'idlc-agents',a:0,q:'What agents did he build at IDLC?',g:'idlc work job role current now agent multi routing router llm platform rag sql text-to-sql engineer company finance gpt',t:["At IDLC Finance he architected a multi-agent platform: a routing agent that reads intent, a RAG agent (FAISS, Hugging Face embeddings, cross-encoder reranking) and a text-to-SQL agent running GPT-OSS-20B.","The big thing at IDLC is a three-part agent system. A router decides where a question goes, a RAG agent answers from company documents, and a text-to-SQL agent lets non-technical people query databases in plain language."]},
+{id:'nid-ocr',a:0,q:'How does his NID OCR work?',g:'ocr nid national id card vision document extract gemini glm onboarding identity multimodal json',t:["He built a Bangladesh NID OCR system with vision-language models (Gemini and GLM OCR). It reads both sides of a National ID card and returns validated, structured JSON through an API.","For documents, he made an NID reader: image preprocessing, prompt engineering and validation turn a card photo into clean JSON. He also worked on cross-checking customer onboarding documents."]},
+{id:'idlc-tools',a:0,q:'What else did he ship at IDLC?',g:'task tracker psr summarise summarize automation fastapi microservice api cache pool streamlit monitor production',t:["Around the agents he added an AI task tracker that summarises work progress, PSR documentation automation, FastAPI microservices with SQL validation, caching and connection pooling, and Streamlit dashboards for monitoring.","He also wrote the plumbing: REST microservices, secured APIs, caching, and dashboards that help debug and evaluate the AI systems."]},
+{id:'robi',a:0,q:'What did he do at Robi?',g:'robi axiata telecom intern internship gem segmentation svm driver customer million hive sql pipeline accuracy 99 survey',t:["At Robi he built Hive/SQL pipelines over 1M+ customers and trained an SVM that scored how likely each person was a professional driver. It hit 99% accuracy against a customer pulse survey.","The Robi internship was customer segmentation at scale: behavioural features from app usage, site counts, calls and ARPU, then a semi-supervised model with pseudo-negative labels to find high-value driver segments."]},
+{id:'rca',a:0,q:'Tell me about the revenue RCA dashboard',g:'rca root cause revenue arpu dashboard streamlit kpi voice data telecom monthly insight excel',t:["He ran monthly root-cause analysis on voice and data revenue, then automated it as a Python and Streamlit dashboard that spots revenue drivers and writes its own insights, charts and Excel files.","The RCA dashboard compares monthly KPIs and ARPU slabs, so analysts don't have to dig through reports by hand."]},
+{id:'teach',a:0,q:'Has he taught anyone?',g:'teach teaching assistant tutor ta brac orko math volunteer student mentor communicate score evaluation',t:["He was a teaching assistant at BRAC University's CSE department and scored 94.29% in the Fall 2024 evaluation, with high marks for communication and concept clarity. He also volunteered as a math tutor with Project Orko.","Teaching is a real side of him: TA work for a year, plus volunteer math tutoring through BRAC's Project Orko."]},
+{id:'ppo',a:1,q:'What is his reinforcement learning project?',g:'ppo reinforcement learning rl portfolio finance trading transformer sharpe invest stock agent',t:["His portfolio-management project uses a transformer-based multi-agent PPO framework and reached an out-of-sample Sharpe ratio of 1.43 in the evaluated period.","Reinforcement learning meets finance: several PPO agents with transformers manage a portfolio, scoring a 1.43 Sharpe ratio out of sample."]},
+{id:'tbml',a:1,q:'How does he detect trade fraud?',g:'trade invoicing mis-invoicing laundering aml fraud detection random forest xgboost f1 accuracy tbml',t:["The trade mis-invoicing project flags possible trade-based money laundering. Random Forest won against Decision Tree and XGBoost with 93.71% test accuracy and a 92.47% weighted F1.","It builds features such as price deviation and country risk on a synthetic dataset derived from IBM's AML data, then compares three models."]},
+{id:'click',a:1,q:'What did he deploy with Docker?',g:'click conversion advertising ad install talkingdata fastapi docker deploy roc auc lightgbm api',t:["Click conversion prediction scored 95.91% ROC-AUC with XGBoost, and he shipped it as a FastAPI service in a Docker image on Docker Hub.","He predicted which ad clicks turn into app installs using frequency and time-interval features, then containerised the model so anyone can run it."]},
+{id:'rag-qa',a:1,q:'How does his RAG Q&A system work?',g:'rag retrieval question answering faiss flan t5 sentence transformer hallucination document search embedding',t:["His RAG question-answering system pairs Sentence Transformers and FAISS retrieval with FLAN-T5 generation, which grounds answers in documents and reduces hallucinations.","A small end-to-end RAG pipeline: embed documents, retrieve the best context with FAISS, then let FLAN-T5 answer from it."]},
+{id:'tableau',a:1,q:'Does he build BI dashboards?',g:'tableau ecommerce commerce sales fulfilment dashboard visualisation visualization kpi aov cancellation bi',t:["The e-commerce Tableau dashboard tracks sales trends, geography, order status and fulfilment channels, with KPIs like average order value and cancellation rate, published on Tableau Public.","For business intelligence he made an interactive Tableau Public dashboard, with filters, parameters and KPI cards."]},
+{id:'sk-core',a:2,q:'Which languages does he code in?',g:'skill language programming python sql javascript html css hive code stack technology java django',t:["His core languages are Python and SQL, with JavaScript, HTML/CSS, SQL Server and Hive for web and data work. Java and Django show up too.","Day to day it's Python and SQL; he also works comfortably with Hive, SQL Server and some front-end."]},
+{id:'sk-ai',a:2,q:'What is his AI skill set?',g:'ai ml machine learning deep nlp llm genai generative computer vision reinforcement multi agent pytorch expertise llama qwen',t:["On the AI side: machine learning, deep learning, LLMs (Llama, GPT, Qwen), RAG, NLP, computer vision, reinforcement learning and multi-agent systems, mostly in PyTorch.","His AI toolbox spans classic ML, deep learning and the modern LLM stack of RAG, agents and vision-language models."]},
+{id:'sk-tools',a:2,q:'Which tools does he use?',g:'tool framework fastapi docker git pytorch faiss hugging face power bi tableau streamlit pandas analytics testing selenium pytest',t:["Tools: FastAPI, Docker, Git, PyTorch, FAISS, Hugging Face, Streamlit, Pandas, Tableau and Power BI. He also knows software testing with Selenium and Pytest.","He ships with FastAPI and Docker, explores with Pandas, and presents with Streamlit, Tableau or Power BI."]},
+{id:'msc',a:3,q:'What is he studying now?',g:'master masters msc dhaka university du graduate study studying current ai data engineering',t:["He's doing a Professional Master's in Artificial Intelligence and Data Engineering at the University of Dhaka (2026 to present), currently at 3.69/4.00.","Right now he's a master's student at the University of Dhaka, in AI and Data Engineering."]},
+{id:'bsc',a:3,q:'How were his grades?',g:'bsc bachelor brac university cse computer science cgpa gpa grade honor summa laude vice chancellor dean list result mark',t:["He graduated from BRAC University in 2025 with a 3.95/4.00 CGPA, summa cum laude, with nine Vice Chancellor's List and one Dean's List recognitions.","Academically he's strong: 3.95 CGPA in Computer Science and Engineering at BRAC University, 9× Vice Chancellor's List."]},
+{id:'school',a:3,q:'Any certificates or school results?',g:'hsc ssc school college notre dame motijheel secondary higher certificate gpa 5.00 data science adb',t:["Before university he scored a perfect 5.00 GPA in both SSC (Motijheel Govt. Boys' High School, 2017) and HSC (Notre Dame College, 2019). In 2026 he also earned a Data Science certificate from BRAC University, funded by ADB.","A GPA 5.00 at SSC and HSC, then a Data Science certificate in 2026 through an ADB-funded BRAC programme."]},
+{id:'who',a:4,q:'Who is Isfar?',g:'who introduce yourself summary bio background person overview',t:["Isfar Ibn Mufty is an AI engineer from Dhaka who connects machine learning with real business problems, from telecom analytics at Robi to enterprise AI agents at IDLC Finance.","He's an Assistant Software Engineer and master's student in Dhaka who likes turning data and new AI tech into practical tools."]},
+{id:'hire',a:4,q:'Why should we hire him?',g:'hire hiring why strength good fit best offer value recruiter team candidate strong',t:["Why hire him? He ships working AI (agents, OCR, text-to-SQL) in a real enterprise setting, understands business through his telecom analytics work, and communicates clearly thanks to his teaching background.","He bridges technical and business sides: he can build the model, wrap it in an API, and explain the result to non-technical people."]},
+{id:'sing',a:4,q:'What does he do for fun?',g:'sing singing music hobby award fun interest cultural free time outside',t:["Outside tech he's won several awards in cultural competitions for singing.","He sings, and has picked up awards in academic cultural competitions."]},
+{id:'goal',a:4,q:'What are his career goals?',g:'goal future interest strategy innovation leadership want looking career plan passion',t:["He's drawn to business strategy, innovation and cross-functional leadership, and wants to apply AI and analytics to operational efficiency and business growth.","Where is he heading? Toward roles where AI meets business decisions."]},
+{id:'contact',a:4,q:'How can I contact him?',g:'contact email mail phone number reach call connect github linkedin where location live dhaka bangladesh based address',t:["You can reach him at isfarakshar@gmail.com or +880 1642 171997. He's based in Dhaka, Bangladesh, and his code is on GitHub at IsfarAkshar.","Email isfarakshar@gmail.com, phone +880 1642 171997, GitHub IsfarAkshar. He lives in Dhaka."]}];
+const STOP=new Set('the is are was what does did how can you his him he she of and for with has have any which this that your do to in on at a an it be me about tell isfar ibn mufty'.split(' '));
+const st=w=>w.length>4?w.replace(/(ing|ed|es|s)$/,''):w;
+const tok=s=>s.toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>1&&!STOP.has(w)).map(st);
+K.forEach(c=>{c.s=new Set(tok(c.g));c.x=tok(c.t.join(' '))});
+const INT=[[/^(hi|hello|hey|salam|assalam)/,"Hello! I'm the routing agent for Isfar's portfolio. Ask about his work, projects, skills, studies, or life outside tech."],[/thank/,"Anytime. If you'd like to talk to the real Isfar, his email is isfarakshar@gmail.com."],[/joke|funny|laugh/,"Why did the RAG agent get the promotion? It always retrieved the right context. (Isfar writes better code than jokes.)"]];
+const seen={},lv={};let run=0;const reduce2=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const rnd=a=>a[Math.random()*a.length|0];
+$('#flow').innerHTML='<g class="nd" id="n0"><rect x="20" y="100" width="140" height="50" rx="10"/><text x="90" y="131">Routing agent</text></g>'+AG.map((n,i)=>{const y=27+i*47;return `<path class="ln" id="la${i}" d="M160 125 C230 125 230 ${y} 300 ${y}"/><path class="ln" id="lb${i}" d="M460 ${y} C530 ${y} 530 125 570 125"/><g class="nd" id="na${i}"><rect x="300" y="${y-19}" width="160" height="38" rx="9"/><text x="380" y="${y+5}">${n} agent</text></g>`}).join('')+'<g class="nd" id="n9"><rect x="570" y="100" width="110" height="50" rx="10"/><text x="625" y="131">Answer</text></g>';
+const STARTS=['Who is Isfar?','What agents did he build at IDLC?','How were his grades?','Why should we hire him?'];
+$('#chips').innerHTML=STARTS.map(q=>`<button class="chip" type="button">${q}</button>`).join('')+'<button class="chip" type="button" data-r="1">Surprise me</button>';
+function light(a){$$('.nd,.ln').forEach(x=>x.classList.remove('act'));$('#n0').classList.add('act');if(a==null)return;$('#la'+a).classList.add('act');setTimeout(()=>{$('#na'+a).classList.add('act');$('#lb'+a).classList.add('act');},400)}
+function typeIn(el,txt,id,cb){if(reduce2){el.textContent=txt;return cb()}let i=0;(function s(){if(id!==run)return;i=Math.min(txt.length,i+2);el.textContent=txt.slice(0,i);if(i<txt.length)setTimeout(s,14);else cb()})()}
+function chipsHTML(cs){return cs.map(c=>`<button class="chip" type="button" data-q="${c.q}">${c.q}</button>`).join('')}
+function done(id,hits,fu,agent){if(id!==run)return;$('#n9').classList.add('act');$('#src').innerHTML=hits.length?'<span>retrieved</span>'+hits.map(h=>`<i style="--w:${Math.round(h.s/hits[0].s*100)}%">${h.c.id} · ${h.s}</i>`).join(''):'';$('#fu').innerHTML=fu.length?'<span>Keep going:</span>'+chipsHTML(fu):''}
+function ask(q){q=q.trim();if(!q)return;const id=++run,out=$('#out');$('#q').value='';
+out.innerHTML=`<small id="tr">You: ${q.replace(/</g,'&lt;')}</small><div id="ans"></div><div class="src" id="src"></div><div class="chips" id="fu"></div>`;
+const it=INT.find(x=>x[0].test(q.toLowerCase()));
+const pool=()=>K.filter(c=>!seen[c.id]);
+if(it){light(null);setTimeout(()=>typeIn($('#ans'),it[1],id,()=>done(id,[],K.filter(c=>STARTS.includes(c.q)).slice(0,3))),300);return}
+const qt=tok(q),sc=K.map(c=>({c,s:qt.reduce((a,w)=>a+(c.s.has(w)?3:c.x.includes(w)?1:0),0)-(seen[c.id]?1:0)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
+if(!sc.length||sc[0].s<2){light(null);$('#tr').textContent='No confident match in my notes';setTimeout(()=>typeIn($('#ans'),"I don't have that in my notes about Isfar, and I won't guess. For anything beyond his CV, email isfarakshar@gmail.com. Here are things I can answer:",id,()=>done(id,[],[...pool()].sort(()=>Math.random()-.5).slice(0,3))),500);return}
+const top=sc[0],picks=[top];if(sc[1]&&sc[1].s>=top.s*.6&&sc[1].s>=4)picks.push(sc[1]);
+const a=top.c.a,again=seen[top.c.id]?'Going deeper on that: ':'';
+$('#tr').textContent=`You: ${q} → retrieving ${Math.min(sc.length,3)} notes, routing to ${AG[a]} agent`;
+const texts=picks.map(p=>{const v=lv[p.c.id]==null?Math.random()*2|0:1-lv[p.c.id];lv[p.c.id]=v;seen[p.c.id]=1;return p.c.t[v]});
+const msg=again+rnd(INTRO[a])+'\n\n'+texts.join('\n\n');
+const fu=[...sc.slice(picks.length).map(x=>x.c).filter(c=>!picks.some(p=>p.c===c)),...pool().sort(()=>Math.random()-.5)].filter((c,i,r)=>!picks.some(p=>p.c===c)&&r.indexOf(c)===i).slice(0,3);
+light(a);setTimeout(()=>typeIn($('#ans'),msg,id,()=>done(id,sc.slice(0,3),fu,a)),900);}
+$('#chips').onclick=$('#out').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;if(b.dataset.r){const c=rnd(K.filter(c=>!seen[c.id]).concat(K));ask(c.q)}else ask(b.dataset.q||b.textContent)};
+$('#f').onsubmit=e=>{e.preventDefault();ask($('#q').value)};
 // counters
 const io=new IntersectionObserver(es=>es.forEach(en=>{if(!en.isIntersecting)return;io.unobserve(en.target);const el=en.target,n=+el.dataset.n,d=+(el.dataset.d||0),s=el.dataset.s||'';let t0;const st=ts=>{t0??=ts;const p=Math.min((ts-t0)/1200,1);el.textContent=(n*(1-Math.pow(1-p,3))).toFixed(d)+s;if(p<1)requestAnimationFrame(st)};requestAnimationFrame(st)}));$$('[data-n]').forEach(x=>io.observe(x));
 // timeline + cards
